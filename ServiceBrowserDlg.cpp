@@ -164,8 +164,8 @@ void CServiceBrowserDlg::StartBrowser()
 {
     HeapSetInformation(NULL, HeapEnableTerminationOnCorruption, NULL, 0);
 	DNSServiceRef client = NULL;
-	DNSServiceErrorType err = DNSServiceBrowse(&client, 0, 0, "_services._dns-sd._udp", "", IterateServiceTypes, this );
-	if ( err == 0 ) {
+	DNSServiceErrorType err = DNSServiceBrowse(&client, 0, kDNSServiceInterfaceIndexAny, "_services._dns-sd._udp", "", IterateServiceTypes, this );
+	if ( err == kDNSServiceErr_NoError ) {
         m_Text.SetWindowText( _T("Browsing for service types using _services._dns-sd._udp" ) );
         m_ClientToFdMap[client] = DNSServiceRefSockFD(client);
 		SetTimer( BROWSER_TIMER, 250, 0 );
@@ -227,7 +227,7 @@ void DNSSD_API CServiceBrowserDlg::IterateServiceTypes( DNSServiceRef sdRef,
 	//
 	// Service types are added to the top level of the tree
 	//
-	if ( flags & kDNSServiceFlagsAdd && !errorCode ) {
+	if ( flags & kDNSServiceFlagsAdd && errorCode == kDNSServiceErr_NoError) {
 		std::string r( regtype );
 		size_t n = r.find_last_of('.');
 		if ( n != std::string::npos )
@@ -246,7 +246,7 @@ void DNSSD_API CServiceBrowserDlg::IterateServiceTypes( DNSServiceRef sdRef,
             DNSServiceRef client = NULL;
 	        DNSServiceErrorType err = DNSServiceBrowse( &client, 
                                                         0, 
-                                                        0, 
+                                                        kDNSServiceInterfaceIndexAny, 
                                                         service_type.c_str(), 
                                                         "", 
                                                         IterateServiceInstances, 
@@ -282,7 +282,7 @@ void DNSSD_API CServiceBrowserDlg::IterateServiceInstances( DNSServiceRef sdRef,
                                                             void *context )
 {
 	CServiceBrowserDlg *p = (CServiceBrowserDlg *) context;
-	if ( (flags & kDNSServiceFlagsAdd) && !errorCode ) {
+	if ( (flags & kDNSServiceFlagsAdd) && errorCode == kDNSServiceErr_NoError ) {
         auto ii = p->m_TreeInsertionMap.find( sdRef );
         if ( ii != p->m_TreeInsertionMap.end() ) {
             HTREEITEM item = p->m_Tree.InsertItem( CA2T(serviceName, CP_UTF8), ii->second, TVI_SORT );
@@ -300,7 +300,7 @@ void DNSSD_API CServiceBrowserDlg::IterateServiceInstances( DNSServiceRef sdRef,
             wchar_t *p2 = CA2T(regtype, CP_UTF8);
             msg.Format( _T("Resolving instance of %s %s"), p1, p2 );
             p->m_Text.SetWindowText( msg );
-            if ( err == 0 ) {
+            if ( err == kDNSServiceErr_NoError ) {
                 p->m_ClientToFdMap[client] = DNSServiceRefSockFD(client);
                 p->m_TreeInsertionMap[client] = item;
             } else {
@@ -334,7 +334,7 @@ void DNSSD_API CServiceBrowserDlg::ResolveInstance( DNSServiceRef sdRef,
                                                     void *context )
 {
 	CServiceBrowserDlg *p = (CServiceBrowserDlg *) context;
-    if ( !errorCode ) {
+    if ( errorCode == kDNSServiceErr_NoError ) {
         auto ii = p->m_TreeInsertionMap.find( sdRef );
         if ( ii != p->m_TreeInsertionMap.end() ) {
             CString msg( _T("Host name: ") );
@@ -354,7 +354,7 @@ void DNSSD_API CServiceBrowserDlg::ResolveInstance( DNSServiceRef sdRef,
                                                                  hosttarget,
                                                                  GetAddress,
                                                                  context );
-                if ( err == 0 ) {
+                if ( err == kDNSServiceErr_NoError ) {
                     p->m_ClientToFdMap[client] = DNSServiceRefSockFD(client);
                     p->m_TreeInsertionMap[client] = item;
                     CString msg;
@@ -371,7 +371,7 @@ void DNSSD_API CServiceBrowserDlg::ResolveInstance( DNSServiceRef sdRef,
             p->m_Tree.InsertItem( msg, ii->second );
             msg.Format( _T("Network interface: %s"), adapterstr );
             p->m_Tree.InsertItem( msg, ii->second );
-            if  ( errorCode == 0 ) {
+            if  ( errorCode == kDNSServiceErr_NoError ) {
                 std::string records;
                 size_t pos = 0;
                 for ( ; ; ) {
@@ -408,7 +408,7 @@ void DNSSD_API CServiceBrowserDlg::GetAddress( DNSServiceRef sdRef,
                                       void *context )
 {
 	CServiceBrowserDlg *p = (CServiceBrowserDlg *) context;
-    if ( !errorCode ) {
+    if ( errorCode == kDNSServiceErr_NoError ) {
         auto ii = p->m_TreeInsertionMap.find( sdRef );
         if ( ii != p->m_TreeInsertionMap.end() ) {
 			char addr[INET6_ADDRSTRLEN];
