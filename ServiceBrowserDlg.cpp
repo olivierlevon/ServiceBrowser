@@ -367,7 +367,7 @@ void DNSSD_API CServiceBrowserDlg::ResolveInstance( DNSServiceRef sdRef,
                     AfxMessageBox( msg );
                 }
 			}
-            msg.Format( _T("Host port: %d"), port );
+            msg.Format( _T("Host port: %d"), ntohs(port) );
             p->m_Tree.InsertItem( msg, ii->second );
             msg.Format( _T("Network interface: %s"), adapterstr );
             p->m_Tree.InsertItem( msg, ii->second );
