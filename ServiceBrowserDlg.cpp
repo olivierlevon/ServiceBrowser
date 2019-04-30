@@ -350,7 +350,7 @@ void DNSSD_API CServiceBrowserDlg::ResolveInstance( DNSServiceRef sdRef,
                 DNSServiceErrorType err = DNSServiceGetAddrInfo( &client,
                                                                  kDNSServiceFlagsTimeout,
                                                                  interfaceIndex,
-                                                                 kDNSServiceProtocol_IPv4,
+                                                                 kDNSServiceProtocol_IPv4 | kDNSServiceProtocol_IPv6,
                                                                  hosttarget,
                                                                  GetAddress,
                                                                  context );
@@ -411,8 +411,12 @@ void DNSSD_API CServiceBrowserDlg::GetAddress( DNSServiceRef sdRef,
     if ( !errorCode ) {
         auto ii = p->m_TreeInsertionMap.find( sdRef );
         if ( ii != p->m_TreeInsertionMap.end() ) {
-            const sockaddr_in *in = (const sockaddr_in *) address;
-            char *ip = inet_ntoa( in->sin_addr );
+			char addr[INET6_ADDRSTRLEN];
+			PCSTR ip;
+			if (address->sa_family == AF_INET6)
+				ip = inet_ntop(address->sa_family, (void*)&((struct sockaddr_in6*)address)->sin6_addr, addr, sizeof(addr));
+			else
+				ip = inet_ntop(address->sa_family, (void*)&((struct sockaddr_in*)address)->sin_addr, addr, sizeof(addr));
             HTREEITEM item = p->m_Tree.InsertItem( CA2T(ip), ii->second );
         } else
             AfxMessageBox( _T("???") );
