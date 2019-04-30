@@ -252,14 +252,14 @@ void DNSSD_API CServiceBrowserDlg::IterateServiceTypes( DNSServiceRef sdRef,
                                                         IterateServiceInstances, 
                                                         context );
             CString msg;
-            msg.Format( _T("Browsing for instances of %s"), CA2T(service_type.c_str()) );
+            msg.Format( _T("Browsing for instances of %s"), (LPCWSTR)CA2T(service_type.c_str()) );
             p->m_Text.SetWindowText( msg );
             if ( err == 0 ) {
                 p->m_ClientToFdMap[client] = DNSServiceRefSockFD(client);
                 p->m_TreeInsertionMap[client] = item;
             } else {
 		        CString msg;
-		        msg.Format( _T("Error trying to browse service type: %s"), CA2T(service_type.c_str()) );
+		        msg.Format( _T("Error trying to browse service type: %s"), (LPCWSTR)CA2T(service_type.c_str()) );
 		        AfxMessageBox( msg );
             }
         }
@@ -305,7 +305,7 @@ void DNSSD_API CServiceBrowserDlg::IterateServiceInstances( DNSServiceRef sdRef,
                 p->m_TreeInsertionMap[client] = item;
             } else {
 		        CString msg;
-		        msg.Format( _T("Error trying to browse service instance: %s"), CA2T(serviceName) );
+		        msg.Format( _T("Error trying to browse service instance: %s"), (LPCWSTR)CA2T(serviceName) );
 		        AfxMessageBox( msg );
             }
         }
@@ -363,7 +363,7 @@ void DNSSD_API CServiceBrowserDlg::ResolveInstance( DNSServiceRef sdRef,
                     p->m_Text.SetWindowText( msg );
                 } else {
                     CString msg;
-                    msg.Format( _T("Error looking up address info for %s"), CA2T( hosttarget, CP_UTF8) );
+                    msg.Format( _T("Error looking up address info for %s"), (LPCWSTR)CA2T( hosttarget, CP_UTF8) );
                     AfxMessageBox( msg );
                 }
 			}
