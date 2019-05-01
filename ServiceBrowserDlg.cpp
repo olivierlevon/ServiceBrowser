@@ -395,6 +395,7 @@ void DNSSD_API CServiceBrowserDlg::ResolveInstance( DNSServiceRef sdRef,
         auto jj = p->m_TreeInsertionMap.find( sdRef );
         p->m_TreeInsertionMap.erase( jj );
         p->m_Tree.Invalidate();
+		DNSServiceRefDeallocate(sdRef);
     }
 }
 void DNSSD_API CServiceBrowserDlg::GetAddress( DNSServiceRef sdRef,
