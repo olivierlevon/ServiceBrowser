@@ -4,6 +4,7 @@
 // This software is licensed under the OSI MIT License, contained in
 // the file license.txt included with this project.
 //
+
 #pragma once
 
 // Including SDKDDKVer.h defines the highest available Windows platform.

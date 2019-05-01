@@ -4,6 +4,8 @@
 // This software is licensed under the OSI MIT License, contained in
 // the file license.txt included with this project.
 //
+
+//
 // ServiceBrowser.h : main header file for the PROJECT_NAME application
 //
 

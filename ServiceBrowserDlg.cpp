@@ -4,6 +4,8 @@
 // This software is licensed under the OSI MIT License, contained in
 // the file license.txt included with this project.
 //
+
+//
 // ServiceBrowserDlg.cpp : implementation file
 //
 
@@ -49,9 +51,6 @@ END_MESSAGE_MAP()
 
 
 // CServiceBrowserDlg dialog
-
-
-
 
 CServiceBrowserDlg::CServiceBrowserDlg(CWnd* pParent /*=NULL*/)
 	: CDialogEx(CServiceBrowserDlg::IDD, pParent)
