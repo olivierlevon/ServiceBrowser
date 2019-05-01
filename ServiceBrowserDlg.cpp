@@ -170,7 +170,7 @@ void CServiceBrowserDlg::StartBrowser()
 		SetTimer( BROWSER_TIMER, 250, 0 );
 	} else {
 		CString msg;
-		msg.Format( _T("Error starting discovery: %d"), err );
+		msg.Format( _T("Error starting discovery: %d %s"), err, (err == kDNSServiceErr_ServiceNotRunning)? _T("Bonjour service not running"): _T("Unknown error"));
 		AfxMessageBox( msg );
 	}
 }
