@@ -34,8 +34,25 @@ CServiceBrowserApp::CServiceBrowserApp()
 
 	// TODO: add construction code here,
 	// Place all significant initialization in InitInstance
+
+	HeapSetInformation(NULL, HeapEnableTerminationOnCorruption, NULL, 0);
+
+#ifdef _DEBUG
+	_CrtSetReportMode(_CRT_WARN, _CRTDBG_MODE_FILE); //_CRTDBG_MODE_DEBUG
+	_CrtSetReportFile(_CRT_WARN, _CRTDBG_FILE_STDOUT);
+	_CrtSetReportMode(_CRT_ERROR, _CRTDBG_MODE_FILE);
+	_CrtSetReportFile(_CRT_ERROR, _CRTDBG_FILE_STDOUT);
+	_CrtSetReportMode(_CRT_ASSERT, _CRTDBG_MODE_FILE);
+	_CrtSetReportFile(_CRT_ASSERT, _CRTDBG_FILE_STDOUT);
+#endif
 }
 
+CServiceBrowserApp::~CServiceBrowserApp()
+{
+#ifdef _DEBUG
+	_CrtDumpMemoryLeaks();
+#endif
+}
 
 // The one and only CServiceBrowserApp object
 
@@ -70,7 +87,7 @@ BOOL CServiceBrowserApp::InitInstance()
 	// Change the registry key under which our settings are stored
 	// TODO: You should modify this string to be something appropriate
 	// such as the name of your company or organization
-	SetRegistryKey(_T("Local AppWizard-Generated Applications"));
+//	SetRegistryKey(_T("Local AppWizard-Generated Applications"));
 
 	CServiceBrowserDlg dlg;
 	m_pMainWnd = &dlg;
@@ -79,11 +96,13 @@ BOOL CServiceBrowserApp::InitInstance()
 	{
 		// TODO: Place code here to handle when the dialog is
 		//  dismissed with OK
+
 	}
 	else if (nResponse == IDCANCEL)
 	{
 		// TODO: Place code here to handle when the dialog is
 		//  dismissed with Cancel
+
 	}
 
 	// Delete the shell manager created above.

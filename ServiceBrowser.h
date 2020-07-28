@@ -26,6 +26,7 @@ class CServiceBrowserApp : public CWinApp
 {
 public:
 	CServiceBrowserApp();
+	virtual ~CServiceBrowserApp();
 
 // Overrides
 public:
