@@ -4,6 +4,11 @@
 // This software is licensed under the OSI MIT License, contained in
 // the file license.txt included with this project.
 //
+// https://github.com/marknelson/ServiceBrowser
+// https://marknelson.us/posts/2011/10/25/dns-service-discovery-on-windows.html
+
+// Copyright (c) 2020 Olivier Levon
+// https://github.com/olivierlevon/ServiceBrowser
 
 //
 // stdafx.h : include file for standard system include files,
