@@ -4,6 +4,11 @@
 // This software is licensed under the OSI MIT License, contained in
 // the file license.txt included with this project.
 //
+// https://github.com/marknelson/ServiceBrowser
+// https://marknelson.us/posts/2011/10/25/dns-service-discovery-on-windows.html
+
+// Copyright (c) 2020 Olivier Levon
+// https://github.com/olivierlevon/ServiceBrowser
 
 //
 // ServiceBrowserDlg.h : header file
@@ -19,18 +24,18 @@
 #include "afxwin.h"
 
 
-
 // CServiceBrowserDlg dialog
 class CServiceBrowserDlg : public CDialogEx
 {
 // Construction
 public:
 	CServiceBrowserDlg(CWnd* pParent = NULL);	// standard constructor
+	virtual ~CServiceBrowserDlg();
 
 // Dialog Data
 	enum { IDD = IDD_SERVICEBROWSER_DIALOG };
 
-	protected:
+protected:
 	virtual void DoDataExchange(CDataExchange* pDX);	// DDX/DDV support
 
 
@@ -40,22 +45,25 @@ protected:
 
 	// Generated message map functions
 	virtual BOOL OnInitDialog();
+	virtual void OnCancel();
 	afx_msg void OnSysCommand(UINT nID, LPARAM lParam);
 	afx_msg void OnPaint();
 	afx_msg HCURSOR OnQueryDragIcon();
 	DECLARE_MESSAGE_MAP()
+
 public:
     static const int BROWSER_TIMER = 1001;
 	CTreeCtrl m_Tree;
     CEdit m_Text;
-	std::unordered_map<DNSServiceRef,int> m_ClientToFdMap;
+	DNSServiceRef clientref = NULL;
+	std::unordered_map<DNSServiceRef,SOCKET> m_ClientToFdMap;
     std::unordered_map<DNSServiceRef,HTREEITEM> m_TreeInsertionMap;
     std::unordered_set<std::string> m_ServiceTypes;
-    std::unordered_set<std::string> m_ServiceInstances;
 	//
 	// DNS-SD browser items
 	//
-	void StartBrowser();	
+	void StartBrowser();
+	void StopBrowser();
 	afx_msg void OnTimer(UINT_PTR nIDEvent);
 	static void DNSSD_API IterateServiceTypes( DNSServiceRef sdRef,
                                                DNSServiceFlags flags,

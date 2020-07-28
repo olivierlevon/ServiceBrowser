@@ -4,6 +4,11 @@
 // This software is licensed under the OSI MIT License, contained in
 // the file license.txt included with this project.
 //
+// https://github.com/marknelson/ServiceBrowser
+// https://marknelson.us/posts/2011/10/25/dns-service-discovery-on-windows.html
+
+// Copyright (c) 2020 Olivier Levon
+// https://github.com/olivierlevon/ServiceBrowser
 
 //
 // ServiceBrowserDlg.cpp : implementation file
@@ -58,6 +63,11 @@ CServiceBrowserDlg::CServiceBrowserDlg(CWnd* pParent /*=NULL*/)
 	m_hIcon = AfxGetApp()->LoadIcon(IDR_MAINFRAME);
 }
 
+CServiceBrowserDlg::~CServiceBrowserDlg()
+{
+    CDialogEx::~CDialogEx();
+}
+
 void CServiceBrowserDlg::DoDataExchange(CDataExchange* pDX)
 {
     CDialogEx::DoDataExchange(pDX);
@@ -106,7 +116,15 @@ BOOL CServiceBrowserDlg::OnInitDialog()
 
 	// TODO: Add extra initialization here
 	StartBrowser();
+
 	return TRUE;  // return TRUE  unless you set the focus to a control
+}
+
+void CServiceBrowserDlg::OnCancel()
+{
+	StopBrowser(); // Stop browsing for all services
+
+	CDialogEx::OnCancel();
 }
 
 void CServiceBrowserDlg::OnSysCommand(UINT nID, LPARAM lParam)
@@ -161,17 +179,36 @@ HCURSOR CServiceBrowserDlg::OnQueryDragIcon()
 
 void CServiceBrowserDlg::StartBrowser()
 {
-    HeapSetInformation(NULL, HeapEnableTerminationOnCorruption, NULL, 0);
-	DNSServiceRef client = NULL;
-	DNSServiceErrorType err = DNSServiceBrowse(&client, 0, kDNSServiceInterfaceIndexAny, "_services._dns-sd._udp", "", IterateServiceTypes, this );
+	DNSServiceErrorType err = DNSServiceBrowse(&clientref, 0, kDNSServiceInterfaceIndexAny, "_services._dns-sd._udp", "", IterateServiceTypes, this );
 	if ( err == kDNSServiceErr_NoError ) {
         m_Text.SetWindowText( _T("Browsing for service types using _services._dns-sd._udp" ) );
-        m_ClientToFdMap[client] = DNSServiceRefSockFD(client);
-		SetTimer( BROWSER_TIMER, 250, 0 );
+        m_ClientToFdMap[clientref] = DNSServiceRefSockFD(clientref);
+		SetTimer( BROWSER_TIMER, 1500, 0 );
 	} else {
 		CString msg;
 		msg.Format( _T("Error starting discovery: %d %s"), err, (err == kDNSServiceErr_ServiceNotRunning)? _T("Bonjour service not running"): _T("Unknown error"));
 		AfxMessageBox( msg );
+	}
+}
+
+void CServiceBrowserDlg::StopBrowser()
+{
+	if (clientref != NULL)
+	{
+		DNSServiceRefDeallocate(clientref);
+		clientref = NULL;
+	}
+
+	if (m_ClientToFdMap.size() != 0) 
+	{
+		CString msg;
+		msg.Format(_T("m_ClientToFdMap not empty: %d"), m_ClientToFdMap.size());
+		AfxMessageBox(msg);
+
+		for (auto ii = m_ClientToFdMap.cbegin(); ii != m_ClientToFdMap.cend(); ) 
+		{
+//			DNSServiceRefDeallocate(clientref);
+		}
 	}
 }
 
@@ -227,8 +264,10 @@ void DNSSD_API CServiceBrowserDlg::IterateServiceTypes( DNSServiceRef sdRef,
 	// Service types are added to the top level of the tree
 	//
 	if ( flags & kDNSServiceFlagsAdd && errorCode == kDNSServiceErr_NoError) {
-		std::string r( regtype );
-		size_t n = r.find_last_of('.');
+// OLE due to mdnsresponder bug!!!
+#if MDNSRESPONDER_BUGGY
+        std::string r( regtype );
+		size_t n = r.find_last_of('.'); 
 		if ( n != std::string::npos )
 			r = r.substr(0,n);
 		n = r.find_last_of('.');
@@ -253,7 +292,7 @@ void DNSSD_API CServiceBrowserDlg::IterateServiceTypes( DNSServiceRef sdRef,
             CString msg;
             msg.Format( _T("Browsing for instances of %s"), (LPCWSTR)CA2T(service_type.c_str()) );
             p->m_Text.SetWindowText( msg );
-            if ( err == 0 ) {
+            if ( err == kDNSServiceErr_NoError ) {
                 p->m_ClientToFdMap[client] = DNSServiceRefSockFD(client);
                 p->m_TreeInsertionMap[client] = item;
             } else {
@@ -262,6 +301,33 @@ void DNSSD_API CServiceBrowserDlg::IterateServiceTypes( DNSServiceRef sdRef,
 		        AfxMessageBox( msg );
             }
         }
+#else
+        auto ii = p->m_ServiceTypes.find( regtype );
+        if ( ii == p->m_ServiceTypes.end() ) 
+        {
+            p->m_ServiceTypes.insert( regtype );
+            HTREEITEM item = p->m_Tree.InsertItem( CA2T(regtype), TVI_ROOT, TVI_SORT );
+            DNSServiceRef client = NULL;
+	        DNSServiceErrorType err = DNSServiceBrowse( &client, 
+                                                        0, 
+                                                        kDNSServiceInterfaceIndexAny, 
+                                                        regtype, 
+                                                        "", //OLE et replyDomain??
+                                                        IterateServiceInstances, 
+                                                        context );
+            CString msg;
+            msg.Format( _T("Browsing for instances of %s"), (LPCWSTR)CA2T(regtype) );
+            p->m_Text.SetWindowText( msg );
+            if ( err == kDNSServiceErr_NoError ) {
+                p->m_ClientToFdMap[client] = DNSServiceRefSockFD(client);
+                p->m_TreeInsertionMap[client] = item;
+            } else {
+		        CString msg;
+		        msg.Format( _T("Error trying to browse service type: %s"), (LPCWSTR)CA2T(regtype) );
+		        AfxMessageBox( msg );
+            }
+        }
+#endif
 	}
     if ( !(flags & kDNSServiceFlagsMoreComing ) ) {
         auto ii = p->m_ClientToFdMap.find( sdRef );
@@ -286,7 +352,7 @@ void DNSSD_API CServiceBrowserDlg::IterateServiceInstances( DNSServiceRef sdRef,
         if ( ii != p->m_TreeInsertionMap.end() ) {
             HTREEITEM item = p->m_Tree.InsertItem( CA2T(serviceName, CP_UTF8), ii->second, TVI_SORT );
             DNSServiceRef client = NULL;
-            DNSServiceErrorType err = DNSServiceResolve ( &client,
+            DNSServiceErrorType err = DNSServiceResolve( &client,
                                                           0,
                                                           interfaceIndex,
                                                           serviceName,
@@ -304,7 +370,7 @@ void DNSSD_API CServiceBrowserDlg::IterateServiceInstances( DNSServiceRef sdRef,
                 p->m_TreeInsertionMap[client] = item;
             } else {
 		        CString msg;
-		        msg.Format( _T("Error trying to browse service instance: %s"), (LPCWSTR)CA2T(serviceName) );
+		        msg.Format( _T("Error trying to resolve service instance: %s"), (LPCWSTR)CA2T(serviceName) );
 		        AfxMessageBox( msg );
             }
         }
@@ -340,32 +406,39 @@ void DNSSD_API CServiceBrowserDlg::ResolveInstance( DNSServiceRef sdRef,
             msg += CA2T( hosttarget, CP_UTF8);
             HTREEITEM item = p->m_Tree.InsertItem( msg, ii->second );
             DNSServiceRef client = NULL;
-			MIB_IFROW IfRow;
-			IfRow.dwIndex = interfaceIndex;
-			DWORD result  = GetIfEntry ( &IfRow );
-			wchar_t *adapterstr = _T("Unknown");
-			if ( result == 0 ) {
-				adapterstr = CA2T( (char*)IfRow.bDescr );
-                DNSServiceErrorType err = DNSServiceGetAddrInfo( &client,
-                                                                 kDNSServiceFlagsTimeout,
-                                                                 interfaceIndex,
-                                                                 kDNSServiceProtocol_IPv4 | kDNSServiceProtocol_IPv6,
-                                                                 hosttarget,
-                                                                 GetAddress,
-                                                                 context );
-                if ( err == kDNSServiceErr_NoError ) {
-                    p->m_ClientToFdMap[client] = DNSServiceRefSockFD(client);
-                    p->m_TreeInsertionMap[client] = item;
-                    CString msg;
-					wchar_t *targetstr = CA2T(hosttarget, CP_UTF8);
-                    msg.Format( _T("Looking up %s on %s"), targetstr, adapterstr );
-                    p->m_Text.SetWindowText( msg );
-                } else {
-                    CString msg;
-                    msg.Format( _T("Error looking up address info for %s"), (LPCWSTR)CA2T( hosttarget, CP_UTF8) );
-                    AfxMessageBox( msg );
-                }
-			}
+            NETIO_STATUS ret;
+	        NET_LUID InterfaceLuid;
+            WCHAR adapterstr[IF_NAMESIZE+1] = _T("");
+
+		    ret = ConvertInterfaceIndexToLuid(interfaceIndex, &InterfaceLuid);
+		    if (NETIO_SUCCESS(ret))
+            {
+			    ConvertInterfaceLuidToAlias(&InterfaceLuid, adapterstr, IF_NAMESIZE+1);      
+            }
+		    else
+            {
+                //OLE adapterstr WCHAR index interfaceIndex
+            }
+            DNSServiceErrorType err = DNSServiceGetAddrInfo( &client,
+                                                                kDNSServiceFlagsTimeout,
+                                                                interfaceIndex,
+                                                                kDNSServiceProtocol_IPv4 | kDNSServiceProtocol_IPv6,
+                                                                hosttarget,
+                                                                GetAddress,
+                                                                context );
+            if ( err == kDNSServiceErr_NoError ) {
+                p->m_ClientToFdMap[client] = DNSServiceRefSockFD(client);
+                p->m_TreeInsertionMap[client] = item;
+                CString msg;
+				wchar_t *targetstr = CA2T(hosttarget, CP_UTF8);
+                msg.Format( _T("Looking up %s on %s"), targetstr, adapterstr );
+                p->m_Text.SetWindowText( msg );
+            } else {
+                CString msg;
+                msg.Format( _T("Error looking up address info for %s"), (LPCWSTR)CA2T( hosttarget, CP_UTF8) );
+                AfxMessageBox( msg );
+            }
+
             msg.Format( _T("Host port: %d"), ntohs(port) );
             p->m_Tree.InsertItem( msg, ii->second );
             msg.Format( _T("Network interface: %s"), adapterstr );
