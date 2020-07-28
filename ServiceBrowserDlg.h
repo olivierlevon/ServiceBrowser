@@ -60,43 +60,17 @@ public:
     std::unordered_map<DNSServiceRef,HTREEITEM> m_TreeInsertionMap;
     std::unordered_set<std::string> m_ServiceTypes;
 	//
-	// DNS-SD browser items
+	// DNS-SD operations items
 	//
 	void StartBrowser();
 	void StopBrowser();
 	afx_msg void OnTimer(UINT_PTR nIDEvent);
-	static void DNSSD_API IterateServiceTypes( DNSServiceRef sdRef,
-                                               DNSServiceFlags flags,
-                                               uint32_t interfaceIndex,
-											   DNSServiceErrorType errorCode,
-                                               const char *serviceName,
-                                               const char *regtype,
-                                               const char *replyDomain,
-                                               void *context );
-	static void DNSSD_API IterateServiceInstances( DNSServiceRef sdRef,
-                                                   DNSServiceFlags flags,
-                                                   uint32_t interfaceIndex,
-											       DNSServiceErrorType errorCode,
-                                                   const char *serviceName,
-                                                   const char *regtype,
-                                                   const char *replyDomain,
-                                                   void *context );
-    static void DNSSD_API ResolveInstance(  DNSServiceRef sdRef,
-                                            DNSServiceFlags flags,
-                                            uint32_t interfaceIndex,
-                                            DNSServiceErrorType errorCode,
-                                            const char *fullname,
-                                            const char *hosttarget,
-                                            uint16_t port,
-                                            uint16_t txtLen,
-                                            const unsigned char *txtRecord,
-                                            void *context );
-    static void DNSSD_API GetAddress( DNSServiceRef sdRef,
-                                      DNSServiceFlags flags,
-                                      uint32_t interfaceIndex,
-                                      DNSServiceErrorType errorCode,
-                                      const char *hostname,
-                                      const struct sockaddr *address,
-                                      uint32_t ttl,
-                                      void *context );
+	static void DNSSD_API IterateServiceTypesCallback( DNSServiceRef sdRef, DNSServiceFlags flags, uint32_t interfaceIndex, DNSServiceErrorType errorCode,
+                                                       const char *serviceName, const char *regtype, const char *replyDomain, void *context );
+	static void DNSSD_API IterateServiceInstancesCallback( DNSServiceRef sdRef, DNSServiceFlags flags, uint32_t interfaceIndex, DNSServiceErrorType errorCode,
+                                                           const char *serviceName, const char *regtype, const char *replyDomain, void *context );
+    static void DNSSD_API ResolveInstanceCallback(  DNSServiceRef sdRef, DNSServiceFlags flags, uint32_t interfaceIndex, DNSServiceErrorType errorCode,
+                                                    const char *fullname, const char *hosttarget, uint16_t port, uint16_t txtLen, const unsigned char *txtRecord, void *context );
+    static void DNSSD_API GetAddressCallback( DNSServiceRef sdRef, DNSServiceFlags flags, uint32_t interfaceIndex, DNSServiceErrorType errorCode, 
+		                                      const char *hostname, const struct sockaddr *address, uint32_t ttl, void *context );
 };

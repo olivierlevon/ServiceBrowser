@@ -179,7 +179,7 @@ HCURSOR CServiceBrowserDlg::OnQueryDragIcon()
 
 void CServiceBrowserDlg::StartBrowser()
 {
-	DNSServiceErrorType err = DNSServiceBrowse(&clientref, 0, kDNSServiceInterfaceIndexAny, "_services._dns-sd._udp", "", IterateServiceTypes, this );
+	DNSServiceErrorType err = DNSServiceBrowse(&clientref, 0, kDNSServiceInterfaceIndexAny, "_services._dns-sd._udp", "", IterateServiceTypesCallback, this );
 	if ( err == kDNSServiceErr_NoError ) 
     {
         m_Text.SetWindowText( _T("Browsing for service types using _services._dns-sd._udp" ) );
@@ -268,8 +268,8 @@ void CServiceBrowserDlg::OnTimer(UINT_PTR nIDEvent)
 	CDialogEx::OnTimer(nIDEvent);
 }
 
-void DNSSD_API CServiceBrowserDlg::IterateServiceTypes( DNSServiceRef sdRef, DNSServiceFlags flags, uint32_t interfaceIndex, DNSServiceErrorType errorCode,
-                                                        const char *serviceName, const char *regtype, const char *replyDomain, void *context )
+void DNSSD_API CServiceBrowserDlg::IterateServiceTypesCallback( DNSServiceRef sdRef, DNSServiceFlags flags, uint32_t interfaceIndex, DNSServiceErrorType errorCode,
+                                                                const char *serviceName, const char *regtype, const char *replyDomain, void *context )
 {
 	CServiceBrowserDlg *p = (CServiceBrowserDlg *) context;
 
@@ -327,7 +327,7 @@ void DNSSD_API CServiceBrowserDlg::IterateServiceTypes( DNSServiceRef sdRef, DNS
 
             DNSServiceRef client = NULL;
 	        DNSServiceErrorType err = DNSServiceBrowse( &client, 0, kDNSServiceInterfaceIndexAny, regtype, "", //OLE et replyDomain??
-                                                        IterateServiceInstances, context );
+                                                        IterateServiceInstancesCallback, context );
 
             CString msg;
             msg.Format( _T("Browsing for instances of %s"), (LPCWSTR)CA2T(regtype) );
@@ -357,8 +357,8 @@ void DNSSD_API CServiceBrowserDlg::IterateServiceTypes( DNSServiceRef sdRef, DNS
     }
 }
 
-void DNSSD_API CServiceBrowserDlg::IterateServiceInstances( DNSServiceRef sdRef, DNSServiceFlags flags, uint32_t interfaceIndex, DNSServiceErrorType errorCode,
-                                                            const char *serviceName, const char *regtype, const char *replyDomain, void *context )
+void DNSSD_API CServiceBrowserDlg::IterateServiceInstancesCallback( DNSServiceRef sdRef, DNSServiceFlags flags, uint32_t interfaceIndex, DNSServiceErrorType errorCode,
+                                                                    const char *serviceName, const char *regtype, const char *replyDomain, void *context )
 {
 	CServiceBrowserDlg *p = (CServiceBrowserDlg *) context;
 
@@ -375,7 +375,8 @@ void DNSSD_API CServiceBrowserDlg::IterateServiceInstances( DNSServiceRef sdRef,
             CString msg;
             wchar_t *p1 = CA2T(serviceName, CP_UTF8);
             wchar_t *p2 = CA2T(regtype, CP_UTF8);
-            msg.Format( _T("Resolving instance of %s %s"), p1, p2 );
+            wchar_t *p3 = CA2T(replyDomain, CP_UTF8);
+            msg.Format( _T("Resolving instance of %s %s s"), p1, p2, p3 );
             p->m_Text.SetWindowText( msg );
 
             if ( err == kDNSServiceErr_NoError ) 
@@ -405,8 +406,8 @@ void DNSSD_API CServiceBrowserDlg::IterateServiceInstances( DNSServiceRef sdRef,
     }
 }
 
-void DNSSD_API CServiceBrowserDlg::ResolveInstance( DNSServiceRef sdRef, DNSServiceFlags flags, uint32_t interfaceIndex, DNSServiceErrorType errorCode,
-                                                    const char *fullname, const char *hosttarget, uint16_t port, uint16_t txtLen, const unsigned char *txtRecord, void *context )
+void DNSSD_API CServiceBrowserDlg::ResolveInstanceCallback( DNSServiceRef sdRef, DNSServiceFlags flags, uint32_t interfaceIndex, DNSServiceErrorType errorCode,
+                                                            const char *fullname, const char *hosttarget, uint16_t port, uint16_t txtLen, const unsigned char *txtRecord, void *context )
 {
 	CServiceBrowserDlg *p = (CServiceBrowserDlg *) context;
 
@@ -496,8 +497,8 @@ void DNSSD_API CServiceBrowserDlg::ResolveInstance( DNSServiceRef sdRef, DNSServ
     }
 }
 
-void DNSSD_API CServiceBrowserDlg::GetAddress( DNSServiceRef sdRef, DNSServiceFlags flags, uint32_t interfaceIndex, DNSServiceErrorType errorCode,
-                                               const char *hostname, const struct sockaddr *address, uint32_t ttl, void *context )
+void DNSSD_API CServiceBrowserDlg::GetAddressCallback( DNSServiceRef sdRef, DNSServiceFlags flags, uint32_t interfaceIndex, DNSServiceErrorType errorCode,
+                                                       const char *hostname, const struct sockaddr *address, uint32_t ttl, void *context )
 {
 	CServiceBrowserDlg *p = (CServiceBrowserDlg *) context;
 
